@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Internal — Order desk (demo)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #0f1419;
+        --panel: #1a222c;
+        --border: #2d3a47;
+        --text: #e8eef4;
+        --muted: #8b9aab;
+        --accent: #3ecf8e;
+        --warn: #ffb020;
+        --danger: #f87171;
+        --mono: "JetBrains Mono", ui-monospace, monospace;
+        --sans: "DM Sans", system-ui, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: var(--sans);
+        background: radial-gradient(
+            ellipse 120% 80% at 20% -20%,
+            #1a2838 0%,
+            transparent 55%
+          ),
+          var(--bg);
+        color: var(--text);
+        line-height: 1.45;
+      }
+
+      .wrap {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 2rem 1.25rem 3rem;
+      }
+
+      header {
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 1.25rem;
+        margin-bottom: 1.5rem;
+      }
+
+      h1 {
+        font-size: 1.35rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        margin: 0 0 0.35rem;
+      }
+
+      .sub {
+        color: var(--muted);
+        font-size: 0.9rem;
+        max-width: 52ch;
+      }
+
+      .banner {
+        margin-top: 1rem;
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        border: 1px solid color-mix(in srgb, var(--warn) 45%, var(--border));
+        background: color-mix(in srgb, var(--warn) 12%, var(--panel));
+        font-size: 0.88rem;
+        color: color-mix(in srgb, var(--warn) 85%, white);
+      }
+
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: flex-end;
+        margin-bottom: 1.5rem;
+      }
+
+      label {
+        display: block;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+        margin-bottom: 0.35rem;
+      }
+
+      select,
+      button {
+        font-family: var(--sans);
+        font-size: 0.95rem;
+      }
+
+      select,
+      input[type="number"] {
+        background: var(--panel);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0.5rem 0.65rem;
+        min-width: 220px;
+      }
+
+      input[type="number"] {
+        min-width: 4.5rem;
+        max-width: 5rem;
+        font-family: var(--mono);
+        font-size: 0.85rem;
+      }
+
+      input[type="number"]::-webkit-outer-spin-button,
+      input[type="number"]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+
+      input[type="number"] {
+        appearance: textfield;
+      }
+
+      button {
+        background: color-mix(in srgb, var(--accent) 22%, var(--panel));
+        color: var(--accent);
+        border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+        border-radius: 8px;
+        padding: 0.5rem 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      button:hover {
+        filter: brightness(1.08);
+      }
+
+      button.secondary {
+        background: var(--panel);
+        color: var(--text);
+        border-color: var(--border);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        overflow: hidden;
+        background: var(--panel);
+      }
+
+      th,
+      td {
+        text-align: left;
+        padding: 0.65rem 0.85rem;
+        border-bottom: 1px solid var(--border);
+      }
+
+      th {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+        background: color-mix(in srgb, var(--bg) 40%, var(--panel));
+      }
+
+      tr:last-child td {
+        border-bottom: none;
+      }
+
+      tr.mine td:first-child {
+        box-shadow: inset 3px 0 0 var(--accent);
+      }
+
+      tr.theirs td:first-child {
+        box-shadow: inset 3px 0 0 var(--danger);
+      }
+
+      .mono {
+        font-family: var(--mono);
+        font-size: 0.82rem;
+      }
+
+      .pill {
+        display: inline-block;
+        padding: 0.15rem 0.45rem;
+        border-radius: 6px;
+        font-size: 0.78rem;
+        font-family: var(--mono);
+        background: color-mix(in srgb, var(--text) 8%, transparent);
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        align-items: center;
+      }
+
+      .actions select {
+        min-width: 120px;
+        font-size: 0.85rem;
+      }
+
+      .log {
+        margin-top: 1.5rem;
+        padding: 1rem;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: color-mix(in srgb, var(--bg) 50%, var(--panel));
+        font-family: var(--mono);
+        font-size: 0.78rem;
+        white-space: pre-wrap;
+        word-break: break-word;
+        color: color-mix(in srgb, var(--muted) 30%, var(--text));
+        min-height: 4.5rem;
+      }
+
+      .log strong {
+        color: var(--accent);
+        font-weight: 500;
+      }
+
+      .log .bad {
+        color: var(--danger);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <h1>Order desk</h1>
+        <p class="sub">
+          Early internal tool mock — loads live data from the demo API (same
+          code as your services).
+        </p>
+        <!-- TODO: Add a banner here -->
+      </header>
+
+      <div class="row">
+        <div>
+          <label for="persona">Viewing as (browser only — not sent to API)</label>
+          <select id="persona" aria-describedby="persona-help"></select>
+        </div>
+        <div>
+          <label>&nbsp;</label>
+          <button type="button" class="secondary" id="reload">Reload orders</button>
+        </div>
+      </div>
+      <p id="persona-help" class="sub" style="margin-top: -0.75rem; font-size: 0.82rem">
+        Rows highlighted green = your mock orders; red = someone else’s.
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Order</th>
+            <th>Owner</th>
+            <th>Status</th>
+            <th>Total</th>
+            <th>Discount %</th>
+            <th>Change status</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+
+      <div class="log" id="log" role="status" aria-live="polite">
+        Ready. Open Network tab: requests have no Authorization header.
+      </div>
+    </div>
+
+    <script>
+      const USERS = [
+        { id: "user-1", label: "Alice (user-1)" },
+        { id: "user-2", label: "Bob (user-2)" },
+      ];
+
+      const STATUSES = ["pending", "paid", "shipped", "cancelled"];
+
+      const persona = document.getElementById("persona");
+      const tbody = document.getElementById("tbody");
+      const log = document.getElementById("log");
+      const reloadBtn = document.getElementById("reload");
+
+      let userEmails = {};
+
+      function setLog(html) {
+        log.innerHTML = html;
+      }
+
+      function esc(s) {
+        return String(s)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+      }
+
+      function currentPersonaId() {
+        return persona.value;
+      }
+
+      function initPersona() {
+        persona.innerHTML = USERS.map(
+          (u) => `<option value="${esc(u.id)}">${esc(u.label)}</option>`
+        ).join("");
+        persona.addEventListener("change", () => renderTable());
+      }
+
+      async function fetchJson(url, options) {
+        const started = performance.now();
+        const res = await fetch(url, options);
+        const text = await res.text();
+        const ms = Math.round(performance.now() - started);
+        let body;
+        try {
+          body = text ? JSON.parse(text) : null;
+        } catch {
+          body = text;
+        }
+        return { res, body, ms };
+      }
+
+      async function loadUserEmails() {
+        for (const u of USERS) {
+          const { res, body } = await fetchJson(`/api/users/${u.id}`);
+          if (res.ok) userEmails[u.id] = body.email;
+        }
+      }
+
+      let orders = [];
+
+      async function loadOrders() {
+        const { res, body, ms } = await fetchJson("/api/orders");
+        if (!res.ok) {
+          setLog(
+            `<span class="bad">GET /api/orders failed ${res.status}</span> (${ms}ms)\n${esc(JSON.stringify(body))}`
+          );
+          return;
+        }
+        orders = body;
+        setLog(
+          `<strong>GET /api/orders</strong> → ${res.status} (${ms}ms)\n` +
+            esc(JSON.stringify(body, null, 2))
+        );
+        renderTable();
+      }
+
+      function renderTable() {
+        const me = currentPersonaId();
+        tbody.innerHTML = orders
+          .map((o) => {
+            const mine = o.userId === me;
+            const rowClass = mine ? "mine" : "theirs";
+            const owner =
+              userEmails[o.userId] || o.userId;
+            const opts = STATUSES.map(
+              (s) =>
+                `<option value="${s}" ${s === o.status ? "selected" : ""}>${s}</option>`
+            ).join("");
+            const discountVal =
+              typeof o.discountPercent === "number" && !Number.isNaN(o.discountPercent)
+                ? String(o.discountPercent)
+                : "10";
+            return `<tr class="${rowClass}">
+            <td class="mono">${esc(o.id)}</td>
+            <td>${esc(owner)}</td>
+            <td><span class="pill">${esc(o.status)}</span></td>
+            <td class="mono">$${(o.totalCents / 100).toFixed(2)}</td>
+            <td class="actions">
+              <input
+                type="number"
+                min="0"
+                max="100"
+                step="1"
+                value="${esc(discountVal)}"
+                data-discount-order="${esc(o.id)}"
+                aria-label="Discount percent for ${esc(o.id)}"
+              />
+              <button type="button" data-apply-discount="${esc(o.id)}">Apply discount</button>
+            </td>
+            <td class="actions">
+              <select data-order="${esc(o.id)}" aria-label="New status for ${esc(o.id)}">${opts}</select>
+              <button type="button" data-apply="${esc(o.id)}">Apply</button>
+            </td>
+          </tr>`;
+          })
+          .join("");
+
+        tbody.querySelectorAll("button[data-apply]").forEach((btn) => {
+          btn.addEventListener("click", () =>
+            applyStatus(btn.getAttribute("data-apply"))
+          );
+        });
+        tbody.querySelectorAll("button[data-apply-discount]").forEach((btn) => {
+          btn.addEventListener("click", () =>
+            applyDiscount(btn.getAttribute("data-apply-discount"))
+          );
+        });
+      }
+
+      async function applyStatus(orderId) {
+        const sel = tbody.querySelector(`select[data-order="${CSS.escape(orderId)}"]`);
+        if (!sel) return;
+        const status = sel.value;
+        const me = currentPersonaId();
+        const order = orders.find((o) => o.id === orderId);
+        const victim = order ? order.userId : "?";
+        const scenario =
+          victim === me
+            ? "updating own order (looks fine)"
+            : `<span class="bad">updating another user’s order while UI says "${esc(
+                USERS.find((u) => u.id === me)?.label || me
+              )}"</span>`;
+
+        const { res, body, ms } = await fetchJson(
+          `/api/orders/${encodeURIComponent(orderId)}/status`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status }),
+          }
+        );
+
+        const ok = res.ok
+          ? `<strong>PATCH …/status</strong> → ${res.status} (${ms}ms) — ${scenario}`
+          : `<span class="bad">PATCH failed ${res.status}</span> (${ms}ms)`;
+
+        setLog(
+          ok +
+            "\n" +
+            esc(typeof body === "string" ? body : JSON.stringify(body, null, 2))
+        );
+        if (res.ok) await loadOrders();
+      }
+
+      reloadBtn.addEventListener("click", () => loadOrders());
+
+      (async function init() {
+        initPersona();
+        await loadUserEmails();
+        await loadOrders();
+      })();
+    </script>
+  </body>
+</html>

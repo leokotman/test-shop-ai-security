@@ -426,12 +426,49 @@
           {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ status }),
+            body: JSON.stringify({ status, requestingUserId: me }),
           }
         );
 
         const ok = res.ok
           ? `<strong>PATCH …/status</strong> → ${res.status} (${ms}ms) — ${scenario}`
+          : `<span class="bad">PATCH failed ${res.status}</span> (${ms}ms)`;
+
+        setLog(
+          ok +
+            "\n" +
+            esc(typeof body === "string" ? body : JSON.stringify(body, null, 2))
+        );
+        if (res.ok) await loadOrders();
+      }
+
+      async function applyDiscount(orderId) {
+        const input = tbody.querySelector(
+          `input[data-discount-order="${CSS.escape(orderId)}"]`
+        );
+        if (!input) return;
+        const percent = Number(input.value);
+        const me = currentPersonaId();
+        const order = orders.find((o) => o.id === orderId);
+        const victim = order ? order.userId : "?";
+        const scenario =
+          victim === me
+            ? "applying discount as order owner"
+            : `<span class="bad">discount on another user’s order while UI says "${esc(
+                USERS.find((u) => u.id === me)?.label || me
+              )}"</span>`;
+
+        const { res, body, ms } = await fetchJson(
+          `/api/orders/${encodeURIComponent(orderId)}/discount`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ percent, requestingUserId: me }),
+          }
+        );
+
+        const ok = res.ok
+          ? `<strong>PATCH …/discount</strong> → ${res.status} (${ms}ms) — ${scenario}`
           : `<span class="bad">PATCH failed ${res.status}</span> (${ms}ms)`;
 
         setLog(

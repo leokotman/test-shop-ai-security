@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 
 import express, { type Request, type Response } from "express";
 
+import { UnauthorizedError } from "./errors.js";
 import type { OrderStatus } from "./types.js";
 import * as orderService from "./services/orderService.js";
 import * as userService from "./services/userService.js";
@@ -69,6 +70,42 @@ app.patch(
       res.json(order);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
+      res.status(msg.includes("not found") ? 404 : 500).json({ error: msg });
+    }
+  },
+);
+
+/** Demo: `requestingUserId` in body stands in for real auth */
+app.patch(
+  "/api/orders/:orderId/discount",
+  async (req: Request, res: Response) => {
+    try {
+      const percent = req.body?.percent;
+      const requestingUserId = req.body?.requestingUserId;
+      if (typeof requestingUserId !== "string" || !requestingUserId) {
+        res.status(400).json({ error: "requestingUserId is required" });
+        return;
+      }
+      if (typeof percent !== "number" || !Number.isFinite(percent)) {
+        res.status(400).json({ error: "percent must be a number" });
+        return;
+      }
+      const order = await orderService.applyDiscount(
+        requestingUserId,
+        oneParam(req.params.orderId),
+        percent,
+      );
+      res.json(order);
+    } catch (e) {
+      if (e instanceof UnauthorizedError) {
+        res.status(401).json({ error: e.message });
+        return;
+      }
+      const msg = e instanceof Error ? e.message : String(e);
+      if (msg.includes("percent must be")) {
+        res.status(400).json({ error: msg });
+        return;
+      }
       res.status(msg.includes("not found") ? 404 : 500).json({ error: msg });
     }
   },

@@ -242,12 +242,17 @@
           Early internal tool mock — loads live data from the demo API (same
           code as your services).
         </p>
-        <!-- TODO: Add a banner here -->
+        <div class="banner">
+          <strong>Demo identity:</strong> “Viewing as” sets
+          <span class="mono">requestingUserId</span> on PATCH bodies. The server
+          trusts that value (no login) — but status and discount updates are
+          rejected with 401 if that id does not own the order.
+        </div>
       </header>
 
       <div class="row">
         <div>
-          <label for="persona">Viewing as (browser only — not sent to API)</label>
+          <label for="persona">Viewing as (requestingUserId on PATCH)</label>
           <select id="persona" aria-describedby="persona-help"></select>
         </div>
         <div>
@@ -256,7 +261,8 @@
         </div>
       </div>
       <p id="persona-help" class="sub" style="margin-top: -0.75rem; font-size: 0.82rem">
-        Rows highlighted green = your mock orders; red = someone else’s.
+        Rows highlighted green = your mock orders; red = someone else’s. Apply on
+        another user’s row → 401.
       </p>
 
       <table>
@@ -426,12 +432,54 @@
           {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ status }),
+            body: JSON.stringify({ status, requestingUserId: me }),
           }
         );
 
         const ok = res.ok
           ? `<strong>PATCH …/status</strong> → ${res.status} (${ms}ms) — ${scenario}`
+          : `<span class="bad">PATCH failed ${res.status}</span> (${ms}ms)`;
+
+        setLog(
+          ok +
+            "\n" +
+            esc(typeof body === "string" ? body : JSON.stringify(body, null, 2))
+        );
+        if (res.ok) await loadOrders();
+      }
+
+      async function applyDiscount(orderId) {
+        const input = tbody.querySelector(
+          `input[data-discount-order="${CSS.escape(orderId)}"]`
+        );
+        if (!input) return;
+        const percent = Number(input.value);
+        const me = currentPersonaId();
+        const order = orders.find((o) => o.id === orderId);
+        const victim = order ? order.userId : "?";
+        const scenario =
+          victim === me
+            ? "updating own order (looks fine)"
+            : `<span class="bad">updating another user’s order while UI says "${esc(
+                USERS.find((u) => u.id === me)?.label || me
+              )}"</span>`;
+
+        if (!Number.isFinite(percent)) {
+          setLog(`<span class="bad">Discount must be a number.</span>`);
+          return;
+        }
+
+        const { res, body, ms } = await fetchJson(
+          `/api/orders/${encodeURIComponent(orderId)}/discount`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ percent, requestingUserId: me }),
+          }
+        );
+
+        const ok = res.ok
+          ? `<strong>PATCH …/discount</strong> → ${res.status} (${ms}ms) — ${scenario}`
           : `<span class="bad">PATCH failed ${res.status}</span> (${ms}ms)`;
 
         setLog(
